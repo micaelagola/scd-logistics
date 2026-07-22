@@ -1,0 +1,38 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SCD Logistics</title>
+<style>
+:root{--bg:#fff;--panel:#f7f7f8;--border:#e5e5e6;--text:#1f2023;--muted:#6b6f76;--accent:#10a37f;--accentw:#e7f5f0;--warn:#b45309;--warnw:#fef3c7}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif;font-size:15px}
+.app{display:flex;min-height:100vh}
+.side{width:230px;background:var(--panel);border-right:1px solid var(--border);padding:22px 14px}
+.brand{font-weight:600;font-size:16px;padding:6px 10px 20px}
+.nav button{width:100%;text-align:left;border:0;background:none;cursor:pointer;padding:9px 12px;border-radius:8px;color:var(--muted);font-weight:500;font-size:15px}
+.nav button:hover{background:#ededf0;color:var(--text)}.nav button.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.main{flex:1;padding:34px 40px;max-width:1100px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 22px}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.drop{border:1.5px dashed var(--border);border-radius:12px;padding:36px;text-align:center;color:var(--muted);cursor:pointer}
+.drop:hover{border-color:var(--accent);background:var(--accentw)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}th{color:var(--muted);font-weight:500}
+.badge{font-size:12px;padding:2px 8px;border-radius:999px;font-weight:500}.ok{background:var(--accentw);color:var(--accent)}.fix{background:var(--warnw);color:var(--warn)}.none{background:#f1f1f3;color:var(--muted)}
+input[type=search]{width:300px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{font-size:24px;font-weight:600}.metric span{display:block;font-size:13px;color:var(--muted);font-weight:400}
+</style></head><body><div class="app">
+<aside class="side"><div class="brand">SCD Logistics</div><nav class="nav" id="nav"></nav></aside>
+<main class="main" id="main"></main></div>
+<script>
+const API=location.origin;
+const T=[["maestro","Maestro"],["importar","Importar"],["revision","Revisión"]];
+let tab="maestro";
+const nav=document.getElementById("nav"),main=document.getElementById("main");
+function render(){nav.innerHTML="";T.forEach(([k,l])=>{const b=document.createElement("button");b.textContent=l;if(k==tab)b.className="active";b.onclick=()=>{tab=k;render()};nav.appendChild(b)});({maestro:M,importar:I,revision:R}[tab])()}
+function bClass(e){return e=="correcto"?"ok":e=="corregido"?"fix":"none"}
+async function M(){main.innerHTML='<h1>Maestro de dimensiones</h1><p class="sub">Base única de productos y medidas de embalaje.</p><div style="margin-bottom:14px"><input type="search" id="q" placeholder="Buscar por SKU o descripción…"><span id="c" style="color:var(--muted);font-size:13px;margin-left:12px"></span></div><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>SKU</th><th>Descripción</th><th>L×A×H (m)</th><th>Vol. m³</th><th>Tipo</th><th>Volumen</th></tr></thead><tbody id="tb"></tbody></table></div>';
+ const q=document.getElementById("q");q.oninput=()=>load(q.value);load("")}
+async function load(q){try{const r=await fetch(API+"/productos?q="+encodeURIComponent(q||""));const d=await r.json();document.getElementById("c").textContent=d.length+" productos";document.getElementById("tb").innerHTML=d.map(p=>`<tr><td style="font-weight:500">${p.sku}</td><td style="color:var(--muted)">${p.descripcion||""}</td><td>${[p.largo_m,p.ancho_m,p.alto_m].filter(x=>x!=null).join(" × ")||"—"}</td><td>${p.volumen_calculado_m3??"—"}</td><td>${p.tipo=="set"?'<span class="badge fix">set</span>':"normal"}</td><td><span class="badge ${bClass(p.estado_volumen)}">${p.estado_volumen||"—"}</span></td></tr>`).join("")}catch(e){document.getElementById("tb").innerHTML='<tr><td colspan=6 style="color:var(--warn)">No pude cargar el maestro.</td></tr>'}}
+function I(){main.innerHTML='<h1>Importar packing list</h1><p class="sub">Soltá un archivo PDF, XLSX o CSV. Te muestro un resumen; nada se guarda sin confirmar.</p><label class="drop" id="dz"><input type="file" accept=".pdf,.xlsx,.xls,.csv" style="display:none" id="fi"><span id="dl">Hacé clic o soltá el archivo acá</span></label><div id="res"></div>';
+ const fi=document.getElementById("fi");document.getElementById("dz").onclick=()=>fi.click();
+ fi.onchange=async()=>{const f=fi.files[0];if(!f)return;document.getElementById("dl").textContent="Procesando "+f.name+"…";const fd=new FormData();fd.append("file",f);try{const r=await fetch(API+"/importar?commit=false",{method:"POST",body:fd});const d=await r.json();document.getElementById("dl").textContent=f.name;document.getElementById("res").innerHTML=`<div class="card" style="margin-top:14px">${d.errores&&d.errores.length?'<p style="color:var(--warn)">'+d.errores.join(" · ")+'</p>':''}<div class="grid"><div class="metric">${d.detectados}<span>detectados</span></div><div class="metric">${d.nuevos}<span>nuevos</span></div><div class="metric">${d.existentes}<span>ya existentes</span></div><div class="metric">${d.modificados}<span>modificados</span></div><div class="metric">${d.duplicados_en_archivo}<span>duplicados en archivo</span></div><div class="metric">${d.no_interpretadas}<span>no interpretadas</span></div></div></div>`}catch(e){document.getElementById("res").innerHTML='<div class="card" style="color:var(--warn)">No pude procesar el archivo.</div>'}}}
+async function R(){main.innerHTML='<h1>Revisión</h1><p class="sub">Productos con dimensiones diferentes o faltantes. Nada se sobrescribe solo.</p><div id="rv"></div>';try{const d=await(await fetch(API+"/revisiones")).json();document.getElementById("rv").innerHTML=d.length?d.map(r=>`<div class="card"><b>${r.sku}</b> — ${r.motivo}<div style="display:flex;gap:24px;margin:10px 0;font-size:14px"><div><div style="color:var(--muted)">Actual</div><code>${JSON.stringify(r.valores_actuales_json)}</code></div><div><div style="color:var(--muted)">Nuevo</div><code>${JSON.stringify(r.valores_nuevos_json)}</code></div></div></div>`).join(""):'<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}catch(e){document.getElementById("rv").innerHTML='<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}}
+render();
+</script></body></html>
