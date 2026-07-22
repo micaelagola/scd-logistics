@@ -1,38 +1,143 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SCD Logistics</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>SCD Logistics</title>
 <style>
 :root{--bg:#fff;--panel:#f7f7f8;--border:#e5e5e6;--text:#1f2023;--muted:#6b6f76;--accent:#10a37f;--accentw:#e7f5f0;--warn:#b45309;--warnw:#fef3c7}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif;font-size:15px}
 .app{display:flex;min-height:100vh}
-.side{width:230px;background:var(--panel);border-right:1px solid var(--border);padding:22px 14px}
-.brand{font-weight:600;font-size:16px;padding:6px 10px 20px}
-.nav button{width:100%;text-align:left;border:0;background:none;cursor:pointer;padding:9px 12px;border-radius:8px;color:var(--muted);font-weight:500;font-size:15px}
-.nav button:hover{background:#ededf0;color:var(--text)}.nav button.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05)}
-.main{flex:1;padding:34px 40px;max-width:1100px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 22px}
+.side{width:250px;background:var(--panel);border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0}
+.brand{font-weight:600;font-size:16px;padding:6px 10px 18px}
+.grp>button{width:100%;text-align:left;border:0;background:none;cursor:pointer;padding:10px 12px;border-radius:8px;color:var(--text);font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.grp>button:hover{background:#ededf0}
+.sub{display:none;flex-direction:column;margin:2px 0 6px 8px;border-left:1px solid var(--border)}
+.grp.open .sub{display:flex}.grp.open>button .chev{transform:rotate(90deg)}
+.chev{transition:.15s;color:var(--muted);font-size:12px}
+.sub button{text-align:left;border:0;background:none;cursor:pointer;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:500;font-size:14px}
+.sub button:hover{background:#ededf0;color:var(--text)}.sub button.active{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.main{flex:1;padding:32px 38px;max-width:1140px}h1{font-size:22px;margin:0 0 4px}.lead{color:var(--muted);margin:0 0 22px}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
-.drop{border:1.5px dashed var(--border);border-radius:12px;padding:36px;text-align:center;color:var(--muted);cursor:pointer}
+.drop{border:1.5px dashed var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--muted);cursor:pointer}
 .drop:hover{border-color:var(--accent);background:var(--accentw)}
-table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}th{color:var(--muted);font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}th{color:var(--muted);font-weight:500}
 .badge{font-size:12px;padding:2px 8px;border-radius:999px;font-weight:500}.ok{background:var(--accentw);color:var(--accent)}.fix{background:var(--warnw);color:var(--warn)}.none{background:#f1f1f3;color:var(--muted)}
-input[type=search]{width:300px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{font-size:24px;font-weight:600}.metric span{display:block;font-size:13px;color:var(--muted);font-weight:400}
+input,select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+input[type=search]{width:300px}
+.btn{border:0;cursor:pointer;background:var(--accent);color:#fff;padding:9px 16px;border-radius:8px;font-weight:500;font-size:14px}
+.btn.sec{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn:disabled{opacity:.5;cursor:default}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric{font-size:23px;font-weight:600}.metric span{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+a.dl{color:var(--accent);font-weight:500;text-decoration:none}
+#c3d{width:100%;height:420px;border:1px solid var(--border);border-radius:12px;background:#fafafa}
 </style></head><body><div class="app">
-<aside class="side"><div class="brand">SCD Logistics</div><nav class="nav" id="nav"></nav></aside>
+<aside class="side"><div class="brand">SCD Logistics</div><nav id="nav"></nav></aside>
 <main class="main" id="main"></main></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const API=location.origin;
-const T=[["maestro","Maestro"],["importar","Importar"],["revision","Revisión"]];
-let tab="maestro";
-const nav=document.getElementById("nav"),main=document.getElementById("main");
-function render(){nav.innerHTML="";T.forEach(([k,l])=>{const b=document.createElement("button");b.textContent=l;if(k==tab)b.className="active";b.onclick=()=>{tab=k;render()};nav.appendChild(b)});({maestro:M,importar:I,revision:R}[tab])()}
-function bClass(e){return e=="correcto"?"ok":e=="corregido"?"fix":"none"}
-async function M(){main.innerHTML='<h1>Maestro de dimensiones</h1><p class="sub">Base única de productos y medidas de embalaje.</p><div style="margin-bottom:14px"><input type="search" id="q" placeholder="Buscar por SKU o descripción…"><span id="c" style="color:var(--muted);font-size:13px;margin-left:12px"></span></div><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>SKU</th><th>Descripción</th><th>L×A×H (m)</th><th>Vol. m³</th><th>Tipo</th><th>Volumen</th></tr></thead><tbody id="tb"></tbody></table></div>';
- const q=document.getElementById("q");q.oninput=()=>load(q.value);load("")}
-async function load(q){try{const r=await fetch(API+"/productos?q="+encodeURIComponent(q||""));const d=await r.json();document.getElementById("c").textContent=d.length+" productos";document.getElementById("tb").innerHTML=d.map(p=>`<tr><td style="font-weight:500">${p.sku}</td><td style="color:var(--muted)">${p.descripcion||""}</td><td>${[p.largo_m,p.ancho_m,p.alto_m].filter(x=>x!=null).join(" × ")||"—"}</td><td>${p.volumen_calculado_m3??"—"}</td><td>${p.tipo=="set"?'<span class="badge fix">set</span>':"normal"}</td><td><span class="badge ${bClass(p.estado_volumen)}">${p.estado_volumen||"—"}</span></td></tr>`).join("")}catch(e){document.getElementById("tb").innerHTML='<tr><td colspan=6 style="color:var(--warn)">No pude cargar el maestro.</td></tr>'}}
-function I(){main.innerHTML='<h1>Importar packing list</h1><p class="sub">Soltá un archivo PDF, XLSX o CSV. Te muestro un resumen; nada se guarda sin confirmar.</p><label class="drop" id="dz"><input type="file" accept=".pdf,.xlsx,.xls,.csv" style="display:none" id="fi"><span id="dl">Hacé clic o soltá el archivo acá</span></label><div id="res"></div>';
+const NAV=[
+ ["Maestro de dimensiones",[["maestro","Maestro"],["importar","Importar"],["revision","Revisión"],["histimp","Historial"]]],
+ ["Optimización de contenedor",[["optim","Nueva optimización"]]],
+ ["Lector de despachos",[["despnew","Nuevo despacho"],["desphist","Historial de despachos"]]]
+];
+let view="maestro", openGrp=0;
+const nav=document.getElementById("nav"), main=document.getElementById("main");
+function renderNav(){nav.innerHTML="";NAV.forEach(([g,subs],gi)=>{
+ const d=document.createElement("div");d.className="grp"+(gi===openGrp?" open":"");
+ const b=document.createElement("button");b.innerHTML=`<span>${g}</span><span class="chev">▶</span>`;
+ b.onclick=()=>{openGrp=(openGrp===gi?-1:gi);renderNav()};d.appendChild(b);
+ const s=document.createElement("div");s.className="sub";
+ subs.forEach(([k,l])=>{const sb=document.createElement("button");sb.textContent=l;if(k===view)sb.className="active";
+  sb.onclick=()=>{view=k;openGrp=gi;renderNav();route()};s.appendChild(sb)});
+ d.appendChild(s);nav.appendChild(d)})}
+function route(){({maestro:vMaestro,importar:vImportar,revision:vRevision,histimp:vHist,optim:vOptim,despnew:vDesp,desphist:vDespHist}[view]||vMaestro)()}
+function bcl(e){return e=="correcto"?"ok":e=="corregido"?"fix":"none"}
+
+// -------- Maestro --------
+async function vMaestro(){main.innerHTML='<h1>Maestro de dimensiones</h1><p class="lead">Base única de productos y medidas de embalaje.</p><div class="row" style="margin-bottom:14px"><input type="search" id="q" placeholder="Buscar por SKU o descripción…"><span id="cnt" style="color:var(--muted);font-size:13px"></span><a class="dl" href="'+API+'/export.xlsx">Descargar Excel</a></div><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>SKU</th><th>Descripción</th><th>L×A×H (m)</th><th>Vol. m³</th><th>Tipo</th><th>Volumen</th></tr></thead><tbody id="tb"></tbody></table></div>';
+ const q=document.getElementById("q");q.oninput=()=>loadM(q.value);loadM("")}
+async function loadM(q){try{const d=await(await fetch(API+"/productos?q="+encodeURIComponent(q||""))).json();
+ document.getElementById("cnt").textContent=d.length+" productos";
+ document.getElementById("tb").innerHTML=d.map(p=>`<tr><td style="font-weight:500">${p.sku}</td><td style="color:var(--muted)">${p.descripcion||""}</td><td>${[p.largo_m,p.ancho_m,p.alto_m].filter(x=>x!=null).join(" × ")||"—"}</td><td>${p.volumen_calculado_m3??"—"}</td><td>${p.tipo=="set"?'<span class="badge fix">set</span>':"normal"}</td><td><span class="badge ${bcl(p.estado_volumen)}">${p.estado_volumen||"—"}</span></td></tr>`).join("")}catch(e){document.getElementById("tb").innerHTML='<tr><td colspan=6 style="color:var(--warn)">No pude cargar el maestro.</td></tr>'}}
+
+// -------- Importar --------
+function vImportar(){main.innerHTML='<h1>Importar packing list</h1><p class="lead">Soltá un archivo PDF, XLSX o CSV. Te muestro un resumen; nada se guarda sin confirmar.</p><label class="drop" id="dz"><input type="file" accept=".pdf,.xlsx,.xls,.csv" style="display:none" id="fi"><span id="dl">Hacé clic o soltá el archivo acá</span></label><div id="res"></div>';
  const fi=document.getElementById("fi");document.getElementById("dz").onclick=()=>fi.click();
- fi.onchange=async()=>{const f=fi.files[0];if(!f)return;document.getElementById("dl").textContent="Procesando "+f.name+"…";const fd=new FormData();fd.append("file",f);try{const r=await fetch(API+"/importar?commit=false",{method:"POST",body:fd});const d=await r.json();document.getElementById("dl").textContent=f.name;document.getElementById("res").innerHTML=`<div class="card" style="margin-top:14px">${d.errores&&d.errores.length?'<p style="color:var(--warn)">'+d.errores.join(" · ")+'</p>':''}<div class="grid"><div class="metric">${d.detectados}<span>detectados</span></div><div class="metric">${d.nuevos}<span>nuevos</span></div><div class="metric">${d.existentes}<span>ya existentes</span></div><div class="metric">${d.modificados}<span>modificados</span></div><div class="metric">${d.duplicados_en_archivo}<span>duplicados en archivo</span></div><div class="metric">${d.no_interpretadas}<span>no interpretadas</span></div></div></div>`}catch(e){document.getElementById("res").innerHTML='<div class="card" style="color:var(--warn)">No pude procesar el archivo.</div>'}}}
-async function R(){main.innerHTML='<h1>Revisión</h1><p class="sub">Productos con dimensiones diferentes o faltantes. Nada se sobrescribe solo.</p><div id="rv"></div>';try{const d=await(await fetch(API+"/revisiones")).json();document.getElementById("rv").innerHTML=d.length?d.map(r=>`<div class="card"><b>${r.sku}</b> — ${r.motivo}<div style="display:flex;gap:24px;margin:10px 0;font-size:14px"><div><div style="color:var(--muted)">Actual</div><code>${JSON.stringify(r.valores_actuales_json)}</code></div><div><div style="color:var(--muted)">Nuevo</div><code>${JSON.stringify(r.valores_nuevos_json)}</code></div></div></div>`).join(""):'<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}catch(e){document.getElementById("rv").innerHTML='<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}}
-render();
+ fi.onchange=async()=>{const f=fi.files[0];if(!f)return;document.getElementById("dl").textContent="Procesando "+f.name+"…";const fd=new FormData();fd.append("file",f);
+  try{const d=await(await fetch(API+"/importar?commit=false",{method:"POST",body:fd})).json();document.getElementById("dl").textContent=f.name;
+   document.getElementById("res").innerHTML=`<div class="card" style="margin-top:14px">${d.errores&&d.errores.length?'<p style="color:var(--warn)">'+d.errores.join(" · ")+'</p>':''}<div class="grid"><div class="metric">${d.detectados}<span>detectados</span></div><div class="metric">${d.nuevos}<span>nuevos</span></div><div class="metric">${d.existentes}<span>ya existentes</span></div><div class="metric">${d.modificados}<span>modificados</span></div><div class="metric">${d.duplicados_en_archivo}<span>duplicados en archivo</span></div><div class="metric">${d.no_interpretadas}<span>no interpretadas</span></div></div><div class="row" style="margin-top:14px"><button class="btn" id="cm">Confirmar e importar</button></div></div>`;
+   document.getElementById("cm").onclick=async()=>{const fd2=new FormData();fd2.append("file",f);await fetch(API+"/importar?commit=true",{method:"POST",body:fd2});document.getElementById("cm").textContent="Importado ✓";document.getElementById("cm").disabled=true}
+  }catch(e){document.getElementById("res").innerHTML='<div class="card" style="color:var(--warn)">No pude procesar el archivo.</div>'}}}
+
+// -------- Revisión --------
+async function vRevision(){main.innerHTML='<h1>Revisión</h1><p class="lead">Productos con dimensiones diferentes o faltantes. Nada se sobrescribe solo.</p><div id="rv"></div>';
+ try{const d=await(await fetch(API+"/revisiones")).json();document.getElementById("rv").innerHTML=d.length?d.map(r=>`<div class="card"><b>${r.sku}</b> — ${r.motivo}<div class="row" style="margin:10px 0;font-size:14px"><div><div style="color:var(--muted)">Actual</div><code>${JSON.stringify(r.valores_actuales_json)}</code></div><div><div style="color:var(--muted)">Nuevo</div><code>${JSON.stringify(r.valores_nuevos_json)}</code></div></div><div class="row"><button class="btn sec">Mantener actual</button><button class="btn sec">Guardar como variante</button><button class="btn">Actualizar</button></div></div>`).join(""):'<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}catch(e){document.getElementById("rv").innerHTML='<div class="card" style="color:var(--muted)">No hay nada pendiente de revisión.</div>'}}
+
+// -------- Historial importaciones --------
+async function vHist(){main.innerHTML='<h1>Historial de importaciones</h1><p class="lead">Cada archivo procesado, con su fecha y resumen.</p><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Fecha</th><th>Archivo</th><th>Detectados</th><th>Nuevos</th><th>Modificados</th></tr></thead><tbody id="hb"></tbody></table></div>';
+ try{const d=await(await fetch(API+"/importaciones")).json();document.getElementById("hb").innerHTML=d.length?d.map(r=>{const j=r.resumen_json||{};return `<tr><td>${(r.fecha||"").slice(0,10)}</td><td>${r.nombre_archivo||""}</td><td>${j.detectados??"—"}</td><td>${j.nuevos??"—"}</td><td>${j.modificados??"—"}</td></tr>`}).join(""):'<tr><td colspan=5 style="color:var(--muted)">Todavía no hay importaciones.</td></tr>'}catch(e){}}
+
+// -------- Optimizador --------
+let optRows=[{sku:"",cantidad:"",prioridad:""}];
+function vOptim(){main.innerHTML=`<h1>Optimización de contenedor</h1><p class="lead">Elegí productos del maestro, el contenedor y el modo. Uso empaquetado 3D real.</p>
+ <div class="card"><div class="row" style="margin-bottom:10px"><label>Contenedor <select id="cont"><option value="20">20 pies</option><option value="40" selected>40 pies</option><option value="40HC">40 High Cube</option></select></label>
+ <label>Modo <select id="modo"><option value="libre">Libre (máx. ocupación)</option><option value="cantidades">Respetar cantidades</option><option value="prioridad">Por prioridad</option></select></label>
+ <button class="btn" id="run">Optimizar</button></div>
+ <table><thead><tr><th>SKU</th><th>Cantidad</th><th>Prioridad</th><th></th></tr></thead><tbody id="orb"></tbody></table>
+ <button class="btn sec" id="addr" style="margin-top:8px">+ Agregar fila</button>
+ <datalist id="skus"></datalist></div><div id="ores"></div>`;
+ fetch(API+"/productos").then(r=>r.json()).then(d=>{document.getElementById("skus").innerHTML=d.map(p=>`<option value="${p.sku}">`).join("")});
+ renderOrb();document.getElementById("addr").onclick=()=>{optRows.push({sku:"",cantidad:"",prioridad:""});renderOrb()};
+ document.getElementById("run").onclick=runOpt}
+function renderOrb(){document.getElementById("orb").innerHTML=optRows.map((r,i)=>`<tr>
+ <td><input list="skus" value="${r.sku}" onchange="optRows[${i}].sku=this.value" placeholder="SKU"></td>
+ <td><input type="number" value="${r.cantidad}" onchange="optRows[${i}].cantidad=this.value" style="width:90px"></td>
+ <td><input type="number" value="${r.prioridad}" onchange="optRows[${i}].prioridad=this.value" style="width:80px"></td>
+ <td><button class="btn sec" onclick="optRows.splice(${i},1);renderOrb()">✕</button></td></tr>`).join("")}
+async function runOpt(){const prods=optRows.filter(r=>r.sku).map(r=>({sku:r.sku,cantidad:+r.cantidad||0,prioridad:+r.prioridad||0}));
+ if(!prods.length)return;document.getElementById("ores").innerHTML='<div class="card">Calculando…</div>';
+ try{const d=await(await fetch(API+"/optimizar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contenedor:document.getElementById("cont").value,modo:document.getElementById("modo").value,productos:prods})})).json();
+  if(d.detail){document.getElementById("ores").innerHTML='<div class="card" style="color:var(--warn)">'+d.detail+'</div>';return}
+  const R=d.resumen;const per=Object.entries(R.cargado_por_sku).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td><td>${R.restante_por_sku[k]||0}</td></tr>`).join("");
+  document.getElementById("ores").innerHTML=`<div class="card"><div class="grid"><div class="metric">${R.pct_volumen}%<span>volumen ocupado</span></div><div class="metric">${R.vol_usado} m³<span>volumen usado</span></div><div class="metric">${R.vol_libre} m³<span>volumen libre</span></div><div class="metric">${R.pct_peso}%<span>peso utilizado</span></div></div>
+  ${R.cap_alcanzado?'<p style="color:var(--warn);font-size:13px;margin-top:10px">Cálculo limitado a 150 cajas por rendimiento; para volúmenes mayores, dividí la carga.</p>':''}
+  <table style="margin-top:14px"><thead><tr><th>SKU</th><th>Cargado</th><th>Restante</th></tr></thead><tbody>${per}</tbody></table></div>
+  <div class="card"><canvas id="c3d"></canvas><p style="color:var(--muted);font-size:13px">Arrastrá para rotar · rueda para zoom</p></div>`;
+  draw3D(d.boxes,R.container)}catch(e){document.getElementById("ores").innerHTML='<div class="card" style="color:var(--warn)">No pude optimizar.</div>'}}
+function colorFor(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return new THREE.Color("hsl("+h+",60%,55%)")}
+function draw3D(boxes,C){const cv=document.getElementById("c3d");const W=cv.clientWidth,H=cv.clientHeight;
+ const sc=new THREE.Scene();sc.background=new THREE.Color(0xfafafa);
+ const cam=new THREE.PerspectiveCamera(45,W/H,0.1,100);cam.position.set(C.L*1.1,C.H*1.6,C.W*2.2);
+ const rn=new THREE.WebGLRenderer({canvas:cv,antialias:true});rn.setSize(W,H);
+ sc.add(new THREE.AmbientLight(0xffffff,0.75));const dl=new THREE.DirectionalLight(0xffffff,0.5);dl.position.set(5,10,7);sc.add(dl);
+ const grp=new THREE.Group();
+ const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(C.L,C.H,C.W)),new THREE.LineBasicMaterial({color:0x999999}));
+ edges.position.set(C.L/2,C.H/2,C.W/2);grp.add(edges);
+ boxes.forEach(b=>{const g=new THREE.BoxGeometry(b.w,b.h,b.d);const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:colorFor(b.sku)}));
+  m.position.set(b.x+b.w/2,b.y+b.h/2,b.z+b.d/2);grp.add(m);
+  grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:0x333333,opacity:.25,transparent:true})).translateX(b.x+b.w/2).translateY(b.y+b.h/2).translateZ(b.z+b.d/2))});
+ grp.position.set(-C.L/2,-C.H/2,-C.W/2);sc.add(grp);
+ let rot=0,down=false,px=0,py=0,ry=0.6,rx=0.3,dist=Math.max(C.L,C.W)*1.8;
+ function upd(){cam.position.set(Math.cos(ry)*Math.cos(rx)*dist,Math.sin(rx)*dist+C.H,Math.sin(ry)*Math.cos(rx)*dist);cam.lookAt(0,0,0);rn.render(sc,cam)}
+ cv.onmousedown=e=>{down=true;px=e.clientX;py=e.clientY};window.onmouseup=()=>down=false;
+ cv.onmousemove=e=>{if(!down)return;ry+=(e.clientX-px)*0.01;rx=Math.max(-1.3,Math.min(1.3,rx+(e.clientY-py)*0.01));px=e.clientX;py=e.clientY;upd()};
+ cv.onwheel=e=>{e.preventDefault();dist=Math.max(2,dist+e.deltaY*0.01);upd()};upd()}
+
+// -------- Despacho --------
+function vDesp(){main.innerHTML=`<h1>Nuevo despacho</h1><p class="lead">Subí el despacho PDF y (opcional) el packing list o factura para cruzar los SKU.</p>
+ <div class="card"><div class="row"><label>Despacho (PDF) <input type="file" id="fd" accept=".pdf"></label></div>
+ <div class="row" style="margin-top:10px"><label>Packing list / factura (opcional) <input type="file" id="fp" accept=".pdf,.xlsx,.xls,.csv"></label></div>
+ <div class="row" style="margin-top:12px"><button class="btn" id="proc">Procesar y generar Excel</button></div></div><div id="dres"></div>`;
+ document.getElementById("proc").onclick=procDesp}
+async function procDesp(){const fd=document.getElementById("fd").files[0];if(!fd){alert("Subí el despacho PDF");return}
+ const f=new FormData();f.append("despacho",fd);const fp=document.getElementById("fp").files[0];if(fp)f.append("pl",fp);
+ document.getElementById("dres").innerHTML='<div class="card">Procesando…</div>';
+ try{const d=await(await fetch(API+"/despacho?commit=true",{method:"POST",body:f})).json();const H=d.despacho;
+  const items=d.items.map(it=>`<tr><td>${it.sku||"—"}</td><td><span class="badge ${it.match=='sin match'?'none':'fix'}">${it.match||""}</span></td><td>${it.item}</td><td>${it.sim||""}</td><td>${it.cantidad??""}</td><td>${it.fob_usd??""}</td><td>${it.der_usd??""}</td><td>${it.iva_usd??""}</td></tr>`).join("");
+  document.getElementById("dres").innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div><b>${H.numero||"—"}</b> · ${H.importador||""} · Ofic. ${H.oficializacion||"—"}</div><a class="dl" href="${API}/despacho/${d.id}.xlsx">Descargar Excel</a></div>
+  <table style="margin-top:12px"><thead><tr><th>SKU</th><th>Match</th><th>Ítem</th><th>SIM</th><th>Cant.</th><th>FOB USD</th><th>Derechos</th><th>IVA</th></tr></thead><tbody>${items}</tbody></table></div>`
+ }catch(e){document.getElementById("dres").innerHTML='<div class="card" style="color:var(--warn)">No pude leer el despacho. ¿Es un despacho SIM válido?</div>'}}
+async function vDespHist(){main.innerHTML='<h1>Historial de despachos</h1><p class="lead">Cada despacho procesado y su Excel.</p><div class="card" style="padding:0;overflow:hidden"><table><thead><tr><th>Fecha</th><th>Número</th><th>Items</th><th>Excel</th></tr></thead><tbody id="dhb"></tbody></table></div>';
+ try{const d=await(await fetch(API+"/despachos")).json();document.getElementById("dhb").innerHTML=d.length?d.map(r=>`<tr><td>${r.fecha_carga||""}</td><td>${r.numero||"—"}</td><td>${(r.resumen_json||{}).n_items??"—"}</td><td><a class="dl" href="${API}/despacho/${r.id}.xlsx">Descargar</a></td></tr>`).join(""):'<tr><td colspan=4 style="color:var(--muted)">Todavía no hay despachos.</td></tr>'}catch(e){}}
+
+renderNav();route();
 </script></body></html>

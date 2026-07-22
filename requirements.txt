@@ -4,3 +4,5 @@ python-multipart==0.0.9
 openpyxl==3.1.2
 pdfplumber==0.11.0
 psycopg[binary]>=3.2.10
+xlsxwriter==3.2.0
+py3dbp==1.1.2
